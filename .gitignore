@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Data & models — never commit the corpus or model weights
+data/raw/
+data/processed/
+data/index/
+models/
+*.gguf
+*.onnx
+*.pt
+*.safetensors
+
+# Secrets & local config
+.env
+*.key
+
+# Vector store / caches
+.chroma/
+*.faiss
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Outputs
+outputs/
+*.log
