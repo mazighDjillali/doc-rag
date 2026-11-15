@@ -44,8 +44,8 @@ months (including an interviewer).
 
 | | |
 |---|---|
-| Phase | 1 · Data foundation (starting) — Phase 0 gate met 2026-11-14 |
-| Last session | Session 1 — 2026-11-14 |
+| Phase | 1 · Data foundation (in progress) — `build_records` done, split policy next |
+| Last session | Session 2 — 2026-11-15 |
 | OCR quality (CER/WER, locked test) | — not measured yet |
 | RAG answer accuracy (ANLS, locked test) | — not measured yet |
 | Retrieval recall@k | — not measured yet |
@@ -78,6 +78,27 @@ months (including an interviewer).
 - **Next target (Phase 1):** Pull a larger slice (~200 docs), build a corpus **manifest** (stable id,
   file hash, source/template id, split) and decide a **template-disjoint split policy** with one
   template held out as an unseen-layout slice.
+
+### Session 2 — 2026-11-15
+- **Built:** `scripts/explore_schema.py` (data inspection); `build_records()` implemented and
+  **passing** `tests/test_build_records.py` (accumulator pattern, `replace` on the frozen dataclass,
+  boundary casts `docId` int→str and `page_no` str→int); `requirements.txt`.
+- **Measured (on 300 val questions):** DocVQA schema confirmed — `ucsf_document_id` exists and is
+  populated, so the split design rests on a real field. 85 distinct `docId` → **~3.5 questions/page**
+  (why a question-level split leaks). 85 `docId` collapse to 64 `ucsf_document_id` → source-grouping
+  buys ~1.3× over docId-disjoint (≈25% of pages belong to a multi-page source).
+- **Broke / learned:** Hit the real wall — translating a spec into code felt "flou". Taught the
+  3-step bridge (énoncé → plain-French micro-steps → one code line each → trace variables by hand).
+  Clarified honest naming: our split is **source-disjoint**, a *proxy* for template-disjoint (no
+  template labels in DocVQA), so `UNSEEN_TEMPLATE` is really "unseen document".
+- **Concepts covered:** lazy/streaming iterables & generators; dict-accumulator pattern; frozen
+  dataclass + `dataclasses.replace`; type-checking at external boundaries; ANLS mechanism relearned
+  (normalized Levenshtein + 0.5 threshold; it ignores citation support → harness needs a separate
+  citation metric); exploration code vs production code.
+- **Teach-back grade:** not formally run; `build_records` correct and tested.
+- **Next target:** implement `assign_splits` (leakage-prevention core) to green its failing test
+  (no `source_id` in two splits; deterministic under seed); then `save_manifest`/`load_manifest`;
+  then build the real ~200-page slice. Still open from Phase 0: pick the success-metric target.
 
 ## Review queue
 

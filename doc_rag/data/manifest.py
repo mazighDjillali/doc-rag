@@ -17,7 +17,7 @@ import json
 from dataclasses import dataclass, replace, asdict
 from enum import Enum
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Counter, Iterable, Sequence
 
 
 class Split(str, Enum):
@@ -99,9 +99,30 @@ def build_records(examples: Iterable[dict], image_dir: str | Path) -> list[DocRe
       - set num_questions = how many questions targeted that page,
       - leave split = None (assign_splits handles it).
     """
-   
-    # TODO: iterate, group by docId, save image once per page, hash it, count questions.
-    raise NotImplementedError
+    image_dir = Path(image_dir)
+    image_dir.mkdir(parents=True, exist_ok=True)
+    acc: dict[str, DocRecord] = {}
+    for  ex in examples:
+        doc_id = str(ex["docId"])  
+        if doc_id not in acc:
+            # first time seeing this page, create a new record
+            path = image_dir / f"{doc_id}.png"
+            ex["image"].save(path)  # save the PIL image to disk
+            file_hash = sha256_file(path)  # compute the hash of the saved image
+            acc[doc_id] = DocRecord(
+                doc_id=doc_id,
+                source_id=ex["ucsf_document_id"],
+                page_no=int(ex["ucsf_document_page_no"]),
+                image_path=str(path),
+                file_hash=file_hash,
+                num_questions=1,  # first question for this page
+            )
+        else:
+            # already seen this page, increment the question count
+            record = acc[doc_id]
+            acc[doc_id] = replace(record, num_questions=record.num_questions + 1)
+
+    return list(acc.values())
 
 if __name__ == "__main__":
     # Quick sanity check: the first two sample images we pulled from DocVQA should match the
